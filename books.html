@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#103C4A">
+<title>বইয়ের তালিকা</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/app.css">
+</head>
+<body class="p-body wide">
+<main class="p-wrap" id="app"></main>
+<script type="module">
+import { db, collection, getDocs, getDoc, doc, setDoc, query, where } from "./assets/firebase.js";
+import { requireUser, touchUser, topHtml, setTop, groupCardHtml, groupBooks, rollBadge, bd, n2, loaderHtml, msgHtml, emptyHtml, qs, esc, toBn, T } from "./assets/app.js";
+
+const app = document.getElementById('app');
+const bar = `<div class="p-bar"><span>${esc(T('bk_all'))} ${bd('', 'bAll')}</span><div class="p-filters"><button type="button" class="p-fil" id="fR" aria-pressed="false"><span>${esc(T('bk_read'))}</span>${bd('', 'bRead')}</button><button type="button" class="p-fil" id="fU" aria-pressed="false"><span>${esc(T('bk_unread'))}</span>${bd('', 'bUn')}</button></div></div>`;
+document.body.insertAdjacentHTML('afterbegin', topHtml({ title: '', back: 'index.html', bar }));
+app.innerHTML = loaderHtml(4);
+const user = await requireUser();
+const profile = (await touchUser(user)) || {};
+const marks = Object.assign({}, profile.doneBooks || {});
+const sid = qs('s');
+let items = [], filter = 'all', first = true, lastRead = null;
+const $ = (id) => document.getElementById(id);
+function counts(anim) {
+  const done = items.filter(b => marks[b.id]).length, rest = items.length - done;
+  const dir = lastRead === null ? 1 : (done > lastRead ? 1 : -1);
+  if (anim && lastRead !== null) { rollBadge($('bRead'), n2(done), dir); rollBadge($('bUn'), n2(rest), -dir); }
+  else { $('bRead').innerHTML = `<i>${n2(done)}</i>`; $('bUn').innerHTML = `<i>${n2(rest)}</i>`; }
+  $('bAll').innerHTML = `<i>${n2(items.length)}</i>`; lastRead = done;
+}
+function draw(anim) {
+  const shown = items.filter(b => filter === 'all' ? true : filter === 'read' ? marks[b.id] : !marks[b.id]);
+  $('fR').classList.toggle('on', filter === 'read'); $('fU').classList.toggle('on', filter === 'unread');
+  $('fR').setAttribute('aria-pressed', filter === 'read'); $('fU').setAttribute('aria-pressed', filter === 'unread');
+  const num = {}; items.forEach((b, k) => { num[b.id] = k + 1; });
+  $('lst').innerHTML = shown.length ? groupBooks(shown).map((g, i) => groupCardHtml({ title: g.title, i, anim: first, tip: T('bk_tick'), rows: g.items.map(b => ({ label: b.name, href: 'book.html?b=' + encodeURIComponent(b.id), id: b.id, done: !!marks[b.id], n: num[b.id] })) })).join('')
+    : emptyHtml('', items.length ? T('bk_empty_f') : T('bk_empty'));
+  first = false; counts(anim);
+}
+try {
+  if (!sid) throw new Error('no id');
+  const sec = await getDoc(doc(db, 'section_buttons', sid));
+  if (!sec.exists() || sec.data().hidden) throw new Error('missing');
+  const sd = sec.data(), name = sd.name || 'বই';
+  document.title = name; setTop(name);
+  if (sd.homeId) $('pBack').href = 'section.html?h=' + encodeURIComponent(sd.homeId);
+  const snap = await getDocs(query(collection(db, 'sub_buttons'), where('sectionId', '==', sid)));
+  items = snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(x => x.v === 3 && !x.hidden).sort((a, b) => (a.order || 0) - (b.order || 0));
+  app.innerHTML = `<div class="p-stack" id="lst"></div>`;
+  draw(false);
+  $('fR').onclick = () => { filter = filter === 'read' ? 'all' : 'read'; draw(false); };
+  $('fU').onclick = () => { filter = filter === 'unread' ? 'all' : 'unread'; draw(false); };
+  $('lst').addEventListener('click', async (e) => {
+    const c = e.target.closest('.p-chk'); if (!c) return;
+    e.preventDefault(); e.stopPropagation();
+    const id = c.dataset.chk, v = !marks[id]; marks[id] = v;
+    if (filter === 'all') { c.classList.toggle('on', v); c.setAttribute('aria-pressed', v); c.closest('.p-gr-row').classList.toggle('is-done', v); counts(true); }
+    else draw(true);
+    try { await setDoc(doc(db, 'users', user.uid), { doneBooks: { [id]: v } }, { merge: true }); } catch (er) { console.error(er); marks[id] = !v; draw(true); }
+  });
+} catch (err) { console.error(err); app.innerHTML = msgHtml(T('load_err'), true); }
+</script>
+</body>
+</html>

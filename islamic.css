@@ -1,0 +1,265 @@
+/* ============================================================
+   Islamic site — shared styles (public pages + admin preview)
+   Rang: emerald #184D47, ivory #EEEEEE + gold, rose (shajer jonno)
+   ============================================================ */
+:root {
+  --green: #184D47;
+  --green-dark: #0C3631;
+  --green-mid: #226B62;
+  --em-l: #25806F;
+  --light: #EEEEEE;
+  --cream: #F6EFDC;
+  --gold: #D9B45B;
+  --gold-l: #F3DFA2;
+  --gold-d: #A67C2E;
+  --rose: #C64756;
+  --ink: #1f2937;
+  --edge: clamp(34px, 4.6vw, 56px);
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { -webkit-tap-highlight-color: transparent; scroll-behavior: smooth; }
+
+/* ---------- page: ivory + soft color glows + drifting pattern + floating stars ---------- */
+body.isl-page {
+  position: relative; min-height: 100vh; overflow-x: hidden;
+  background:
+    radial-gradient(900px 520px at 6% 14%, rgba(37, 128, 111, .13), transparent 62%),
+    radial-gradient(800px 520px at 96% 78%, rgba(217, 180, 91, .20), transparent 62%),
+    radial-gradient(600px 420px at 70% 8%, rgba(198, 71, 86, .07), transparent 65%),
+    var(--cream);
+  color: var(--ink);
+  font-family: 'Hind Siliguri', 'Amiri', sans-serif;
+}
+body.isl-page::before {
+  content: ''; position: fixed; inset: -80px; z-index: 0; pointer-events: none;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'%3E%3Cg fill='none' stroke='%23184D47' stroke-opacity='.085' stroke-width='1.2'%3E%3Cpath d='M40.00 16.00 L47.03 23.03 L56.97 23.03 L56.97 32.97 L64.00 40.00 L56.97 47.03 L56.97 56.97 L47.03 56.97 L40.00 64.00 L32.97 56.97 L23.03 56.97 L23.03 47.03 L16.00 40.00 L23.03 32.97 L23.03 23.03 L32.97 23.03Z'/%3E%3Ccircle cx='40' cy='40' r='6'/%3E%3Cpath d='M0 -9L9 0L0 9L-9 0Z' transform='translate(0 0)'/%3E%3Cpath d='M0 -9L9 0L0 9L-9 0Z' transform='translate(0 80)'/%3E%3Cpath d='M0 -9L9 0L0 9L-9 0Z' transform='translate(80 0)'/%3E%3Cpath d='M0 -9L9 0L0 9L-9 0Z' transform='translate(80 80)'/%3E%3C/g%3E%3C/svg%3E");
+  animation: islDrift 50s linear infinite;
+}
+@keyframes islDrift { to { transform: translate(80px, 80px); } }
+.isl-bg { position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
+.isl-bg b {
+  position: absolute; left: var(--x); bottom: -70px; width: var(--s); height: var(--s); opacity: 0;
+  background: var(--gold); clip-path: polygon(50% 0, 60% 40%, 100% 50%, 60% 60%, 50% 100%, 40% 60%, 0 50%, 40% 40%);
+  animation: islUp var(--t) linear var(--d) infinite;
+}
+.isl-bg b:nth-child(even) { background: var(--em-l); }
+.isl-bg b:nth-child(3n) { background: var(--rose); }
+@keyframes islUp {
+  0% { opacity: 0; transform: translateY(0) rotate(0deg); }
+  10%, 90% { opacity: .2; }
+  100% { opacity: 0; transform: translateY(-115vh) rotate(360deg); }
+}
+
+.isl-wrap { position: relative; z-index: 1; max-width: 980px; margin: 0 auto; padding: 26px 16px 56px; }
+.isl-wrap.narrow { max-width: 560px; }
+
+/* ---------- keyframes ---------- */
+@keyframes islRise    { from { opacity: 0; transform: translateY(28px) scale(.96); } to { opacity: 1; transform: none; } }
+@keyframes islDown    { from { opacity: 0; transform: translateY(-100%); } to { opacity: 1; transform: none; } }
+@keyframes islBob     { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+@keyframes islFloat   { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-7px); } }
+@keyframes islTwinkle { 0%, 100% { opacity: .12; transform: scale(.6); } 50% { opacity: 1; transform: scale(1.15); } }
+@keyframes islSwing   { from { transform: rotate(-6deg); } to { transform: rotate(6deg); } }
+@keyframes islGlow    { 0%, 100% { opacity: .65; } 50% { opacity: 1; } }
+@keyframes islSpin    { to { transform: rotate(360deg); } }
+@keyframes islShine   { from { transform: translateX(0) skewX(-18deg); } to { transform: translateX(var(--sx, 760px)) skewX(-18deg); } }
+@keyframes islBism    { 0%, 100% { text-shadow: 0 0 8px rgba(243, 223, 162, .25); } 50% { text-shadow: 0 0 22px rgba(243, 223, 162, .8); } }
+@keyframes islShimmer { from { background-position: 0% 0; } to { background-position: 250% 0; } }
+@keyframes islSheen   { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+
+/* ============================================================
+   HERO (home) — chand, tara, fanus, ghurte thaka alor rashmi
+   ============================================================ */
+.isl-hero {
+  position: relative; z-index: 1; overflow: hidden; text-align: center; color: var(--light);
+  padding: 46px 18px calc(var(--edge) + 34px);
+  background: radial-gradient(120% 95% at 50% 0%, #2b7c72 0%, var(--green) 46%, var(--green-dark) 100%);
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 56' preserveAspectRatio='none'%3E%3Cpath d='M0 0H1200V34H694C660 34 634 30 600 4C566 30 540 34 506 34H0Z' fill='black'/%3E%3C/svg%3E") bottom / 100% var(--edge) no-repeat, linear-gradient(#000, #000) top / 100% calc(100% - var(--edge) + 1px) no-repeat;
+          mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 56' preserveAspectRatio='none'%3E%3Cpath d='M0 0H1200V34H694C660 34 634 30 600 4C566 30 540 34 506 34H0Z' fill='black'/%3E%3C/svg%3E") bottom / 100% var(--edge) no-repeat, linear-gradient(#000, #000) top / 100% calc(100% - var(--edge) + 1px) no-repeat;
+}
+.isl-hero::before {
+  content: ''; position: absolute; inset: -80px; pointer-events: none;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'%3E%3Cg fill='none' stroke='%23F3DFA2' stroke-opacity='.08' stroke-width='1.2'%3E%3Cpath d='M40.00 16.00 L47.03 23.03 L56.97 23.03 L56.97 32.97 L64.00 40.00 L56.97 47.03 L56.97 56.97 L47.03 56.97 L40.00 64.00 L32.97 56.97 L23.03 56.97 L23.03 47.03 L16.00 40.00 L23.03 32.97 L23.03 23.03 L32.97 23.03Z'/%3E%3Ccircle cx='40' cy='40' r='6'/%3E%3Cpath d='M0 -9L9 0L0 9L-9 0Z' transform='translate(0 0)'/%3E%3Cpath d='M0 -9L9 0L0 9L-9 0Z' transform='translate(0 80)'/%3E%3Cpath d='M0 -9L9 0L0 9L-9 0Z' transform='translate(80 0)'/%3E%3Cpath d='M0 -9L9 0L0 9L-9 0Z' transform='translate(80 80)'/%3E%3C/g%3E%3C/svg%3E"); animation: islDrift 60s linear infinite reverse;
+}
+.isl-rays {
+  position: absolute; left: 50%; top: -330px; width: 900px; height: 900px; margin-left: -450px; pointer-events: none;
+  background: repeating-conic-gradient(from 0deg, rgba(243, 223, 162, .14) 0 5deg, transparent 5deg 15deg);
+  -webkit-mask-image: radial-gradient(circle, #000 0, transparent 66%); mask-image: radial-gradient(circle, #000 0, transparent 66%);
+  animation: islSpin 120s linear infinite;
+}
+.isl-hero-in { position: relative; z-index: 2; }
+.isl-stars { position: absolute; inset: 0; z-index: 1; pointer-events: none; }
+.isl-stars i {
+  position: absolute; left: var(--x); top: var(--y); width: var(--s); height: var(--s);
+  background: #F4E4A8; opacity: .15; clip-path: polygon(50% 0, 60% 40%, 100% 50%, 60% 60%, 50% 100%, 40% 60%, 0 50%, 40% 40%);
+  animation: islTwinkle var(--t) ease-in-out var(--d) infinite;
+}
+.isl-moon { display: block; width: 82px; height: 82px; margin: 0 auto 2px; animation: islFloat 6s ease-in-out infinite; filter: drop-shadow(0 0 18px rgba(243, 223, 162, .65)); }
+.isl-lantern { position: absolute; top: -8px; z-index: 1; width: clamp(34px, 8.5vw, 60px); height: auto; transform-origin: 50% 0; animation: islSwing 5s ease-in-out infinite alternate; filter: drop-shadow(0 6px 10px rgba(0, 0, 0, .3)); }
+.isl-lantern.l1 { left: 5%; }
+.isl-lantern.l2 { right: 7%; width: clamp(28px, 7vw, 48px); animation-duration: 6.2s; animation-delay: -2.4s; }
+.isl-flame { animation: islGlow 2.4s ease-in-out infinite; }
+.isl-bismillah {
+  font-family: 'Amiri Quran', 'Amiri', serif; font-size: clamp(22px, 5.6vw, 32px); color: #F6E6AA; line-height: 2;
+  animation: islRise .9s .1s backwards, islBism 4s ease-in-out 1s infinite;
+}
+.isl-title {
+  font-family: 'AdorNoirrit', 'Ador Noirrit', 'Hind Siliguri', sans-serif; font-weight: 400;
+  font-size: clamp(32px, 8vw, 54px); line-height: 1.25; padding: 2px 0 4px;
+  background: linear-gradient(100deg, #F4DE9A 0%, #FFFFFF 22%, #E7C874 48%, #FFFFFF 74%, #F4DE9A 100%); background-size: 250% 100%;
+  -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; color: transparent;
+  filter: drop-shadow(0 2px 10px rgba(0, 0, 0, .35));
+  animation: islRise .9s .3s backwards, islShimmer 7s linear 1.2s infinite;
+}
+.isl-subtitle { margin-top: 4px; color: #d3e6e1; font-size: clamp(14px, 3.6vw, 18px); animation: islRise .9s .45s backwards; }
+.isl-edge { position: absolute; left: 0; right: 0; bottom: 0; width: 100%; height: var(--edge); z-index: 3; display: block; pointer-events: none; }
+
+/* ============================================================
+   HEADER (bhitorer page)
+   ============================================================ */
+.isl-header {
+  position: sticky; top: 0; z-index: 30;
+  display: flex; align-items: center; gap: 10px; padding: 12px 14px 15px;
+  background: linear-gradient(180deg, #1b5f55, #123F3A); color: var(--light);
+  box-shadow: 0 8px 20px rgba(12, 54, 49, .28);
+  animation: islDown .7s cubic-bezier(.2, .8, .2, 1) backwards;
+}
+.isl-header::after {
+  content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 3px; pointer-events: none;
+  background: linear-gradient(90deg, transparent, var(--gold), #FFF6D2, var(--gold), transparent); background-size: 200% 100%;
+  animation: islSheen 5s linear infinite;
+}
+.isl-htitle { flex: 1; min-width: 0; text-align: center; }
+.isl-htitle h1 { font-family: 'AdorNoirrit', 'Ador Noirrit', 'Hind Siliguri', sans-serif; font-weight: 400; font-size: 1.28rem; line-height: 1.3; color: #FFF1C2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.isl-htitle small { display: block; font-size: .76rem; color: #bcd6d1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.isl-back {
+  flex: none; width: 40px; height: 40px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--gold-l); background: rgba(243, 223, 162, .13); border: 1px solid rgba(243, 223, 162, .28);
+  text-decoration: none; transition: background .2s, transform .2s;
+}
+.isl-back:hover { background: rgba(243, 223, 162, .26); transform: translateX(-2px); }
+.isl-back svg { width: 22px; height: 22px; }
+.isl-hmoon { flex: none; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; }
+.isl-moon-mini { width: 36px; height: 36px; filter: drop-shadow(0 0 8px rgba(243, 223, 162, .55)); animation: islFloat 5s ease-in-out infinite; }
+
+/* ============================================================
+   BUTTONS
+   Home = mihrab arch card (alada)  |  Section/number = naksha-kora plaque
+   ============================================================ */
+.isl-home-grid { display: flex; flex-wrap: wrap; justify-content: center; gap: 30px 26px; padding-top: 8px; }
+.isl-home-grid > .isl-msg, .isl-home-grid > .isl-loading { flex: 1 1 100%; }
+.isl-stack { display: flex; flex-direction: column; align-items: center; gap: 20px; width: 100%; max-width: 480px; margin: 0 auto; padding-top: 14px; }
+.isl-stack > .isl-msg, .isl-stack > .isl-loading { width: 100%; }
+
+.isl-home, .isl-btn {
+  display: block; position: relative; container-type: inline-size;
+  color: var(--light); text-decoration: none; user-select: none; -webkit-user-select: none;
+  transition: transform .28s cubic-bezier(.2, .8, .2, 1), filter .28s;
+  animation: islRise .8s cubic-bezier(.2, .8, .2, 1) backwards; animation-delay: calc(var(--i, 0) * 90ms);
+}
+.isl-home { width: min(100%, 272px); aspect-ratio: 300 / 196; filter: drop-shadow(0 8px 10px rgba(12, 54, 49, .28)); }
+.isl-btn  { width: 100%; aspect-ratio: 612 / 132; filter: drop-shadow(0 6px 8px rgba(12, 54, 49, .26)); }
+.isl-bob { display: block; position: relative; width: 100%; height: 100%; animation: islBob 5.5s ease-in-out infinite; animation-delay: calc(var(--i, 0) * -.9s); }
+.isl-home svg, .isl-btn svg { display: block; width: 100%; height: 100%; }
+.isl-home:hover { transform: translateY(-6px) scale(1.04); filter: drop-shadow(0 16px 16px rgba(12, 54, 49, .36)) drop-shadow(0 0 14px rgba(217, 180, 91, .5)); }
+.isl-btn:hover  { transform: translateY(-4px) scale(1.025); filter: drop-shadow(0 12px 14px rgba(12, 54, 49, .36)) drop-shadow(0 0 12px rgba(217, 180, 91, .45)); }
+.isl-home:active, .isl-btn:active { transform: scale(.97); }
+.isl-home:focus-visible, .isl-btn:focus-visible { outline: 3px solid var(--gold); outline-offset: 5px; border-radius: 26px; }
+
+.isl-shine { transform: translateX(0) skewX(-18deg); --sx: 760px; }
+.isl-home .isl-shine { --sx: 430px; }
+.isl-home:hover .isl-shine, .isl-btn:hover .isl-shine { animation: islShine .95s ease; }
+.isl-spin { transform-box: fill-box; transform-origin: center; animation: islSpin 26s linear infinite; }
+.isl-spin.fast { animation-duration: 3.2s; }
+.isl-pop { transform-box: fill-box; transform-origin: center; transition: transform .4s cubic-bezier(.2, .8, .2, 1); }
+.isl-home:hover .isl-pop, .isl-btn:hover .isl-pop { transform: scale(1.22); }
+
+/* lekha — button er thik majhkhane */
+.isl-label { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; text-align: center; }
+.isl-btn .isl-label { padding: 0 17%; }
+.isl-home .isl-label { padding: 9% 14% 0; }
+.isl-text {
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  font-family: 'AdorNoirrit', 'Ador Noirrit', 'Hind Siliguri', sans-serif; font-weight: 400;
+  color: #FFF4D2; line-height: 1.3; word-break: break-word; letter-spacing: .3px;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, .45), 0 0 16px rgba(243, 223, 162, .35);
+}
+.isl-btn .isl-text  { font-size: clamp(15px, 5.2cqw, 26px); }
+.isl-home .isl-text { font-size: clamp(17px, 7.6cqw, 25px); -webkit-line-clamp: 3; }
+.isl-num {
+  position: absolute; left: 11.44%; top: 50%; transform: translate(-50%, -50%);
+  color: #0C3631; font-family: 'Hind Siliguri', sans-serif; font-weight: 700; line-height: 1; pointer-events: none;
+  font-size: clamp(15px, 6cqw, 28px);
+}
+
+/* ---------- loader / messages / ornament ---------- */
+.isl-loading { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 52px 0; color: #6b7280; font-size: .95rem; }
+.isl-loading svg { width: 46px; height: 46px; }
+.isl-msg { text-align: center; color: #6b7280; padding: 44px 12px; font-size: 1rem; line-height: 1.7; }
+.isl-msg.err { color: #b91c1c; }
+.isl-orn { display: flex; align-items: center; justify-content: center; gap: 10px; margin: 14px auto 0; width: min(260px, 70%); }
+.isl-orn span { flex: 1; height: 1.5px; background: linear-gradient(90deg, transparent, var(--gold-d)); }
+.isl-orn span:last-child { background: linear-gradient(270deg, transparent, var(--gold-d)); }
+.isl-orn svg { width: 20px; height: 20px; flex: none; }
+.isl-hero .isl-orn span { background: linear-gradient(90deg, transparent, var(--gold)); }
+.isl-hero .isl-orn span:last-child { background: linear-gradient(270deg, transparent, var(--gold)); }
+.isl-hero .isl-orn svg use { fill: #F6E6AA; }
+.isl-foot { margin-top: 38px; opacity: .95; }
+
+/* ============================================================
+   NOTE page + rich text (editor-eo ei style e dekhay)
+   ============================================================ */
+.isl-note {
+  position: relative; border-radius: 22px; padding: 32px 24px 30px;
+  background: linear-gradient(180deg, #FFFEF9, #FFF9EA);
+  border: 1px solid rgba(166, 124, 46, .28); box-shadow: 0 14px 38px rgba(12, 54, 49, .16);
+  animation: islRise .8s cubic-bezier(.2, .8, .2, 1) backwards;
+}
+.isl-note::before, .isl-note::after { content: ''; position: absolute; width: 44px; height: 44px; border: 2px solid var(--gold-d); opacity: .8; pointer-events: none; }
+.isl-note::before { top: 10px; left: 10px; border-right: 0; border-bottom: 0; border-top-left-radius: 16px; }
+.isl-note::after { bottom: 10px; right: 10px; border-left: 0; border-top: 0; border-bottom-right-radius: 16px; }
+.isl-note > h2 { font-family: 'AdorNoirrit', 'Ador Noirrit', 'Hind Siliguri', sans-serif; font-weight: 400; color: var(--green); text-align: center; font-size: clamp(1.4rem, 5.4vw, 1.9rem); line-height: 1.4; padding: 0 8px; }
+.isl-note .isl-orn { margin: 8px auto 20px; }
+
+.isl-rich {
+  font-family: 'Noto Serif Bengali', 'Hind Siliguri', serif; font-size: 1.06rem; line-height: 1.95;
+  color: #27332f; word-break: break-word; overflow-wrap: anywhere;
+}
+.isl-rich p, .isl-rich div { margin: 0 0 .55em; }
+.isl-rich h2 { font-size: 1.4em; color: var(--green); margin: .9em 0 .35em; padding-bottom: .15em; line-height: 1.4; border-bottom: 2px solid rgba(217, 180, 91, .55); }
+.isl-rich h3 { font-size: 1.2em; color: var(--green-mid); margin: .8em 0 .3em; line-height: 1.4; }
+.isl-rich h4 { font-size: 1.05em; color: var(--rose); margin: .7em 0 .25em; line-height: 1.4; }
+.isl-rich ul, .isl-rich ol { margin: .3em 0 .8em; padding-left: 1.6em; }
+.isl-rich ul { list-style: none; }
+.isl-rich ul > li { position: relative; margin-bottom: .2em; }
+.isl-rich ul > li::before { content: '✦'; position: absolute; left: -1.3em; top: .32em; font-size: .72em; color: var(--gold-d); }
+.isl-rich ol > li { margin-bottom: .2em; }
+.isl-rich ol > li::marker { color: var(--green); font-weight: 700; }
+.isl-rich blockquote { margin: .8em 0; padding: .6em 1em; border-left: 4px solid var(--gold-d); background: rgba(217, 180, 91, .14); border-radius: 0 12px 12px 0; }
+.isl-rich hr { border: 0; height: 2px; width: 70%; margin: 1.2em auto; background: linear-gradient(90deg, transparent, var(--gold-d), transparent); }
+.isl-rich a { color: var(--green); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
+.isl-rich [dir="rtl"] { font-family: 'Amiri', serif; font-size: 1.35em; line-height: 2.2; }
+.isl-rich ul[dir="rtl"], .isl-rich ol[dir="rtl"] { padding-left: 0; padding-right: 1.6em; }
+.isl-rich ul[dir="rtl"] > li::before { left: auto; right: -1.3em; }
+.isl-note .isl-rich > * { animation: islRise .6s cubic-bezier(.2, .8, .2, 1) backwards; animation-delay: calc(var(--k, 0) * 55ms + .2s); }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
+
+/* ---- richer notes (headings, tables, images, TOC, page break) ---- */
+.isl-rich h1 { font-size: 1.7em; text-align: center; color: var(--green); margin: .6em 0 .3em; line-height: 1.35; }
+.isl-rich p.doc-sub { text-align: center; font-size: 1.12em; color: var(--green-mid, #146B50); opacity: .85; margin-bottom: .9em; }
+.isl-rich table { border-collapse: collapse; margin: .8em 0; max-width: 100%; display: block; overflow-x: auto; }
+.isl-rich td, .isl-rich th { border: 1px solid rgba(120, 100, 40, .55); padding: 6px 10px; vertical-align: top; min-width: 40px; }
+.isl-rich th { background: rgba(217, 180, 91, .25); font-weight: 700; }
+.isl-rich table[data-b="0"] td, .isl-rich table[data-b="0"] th { border-color: transparent; }
+.isl-rich img { max-width: 100%; height: auto; border-radius: 6px; }
+.isl-rich .pgbreak { border: 0; border-top: 2px dashed rgba(120, 100, 40, .45); margin: 1.4em 0; height: 0; padding: 0; }
+.isl-rich .toc { border: 1px dashed rgba(120, 100, 40, .55); border-radius: 12px; padding: .6em 1em; margin: .8em 0; background: rgba(217, 180, 91, .1); }
+.isl-rich .toc p { margin: .15em 0; } .isl-rich .toc a { text-decoration: none; font-weight: 500; }
+.isl-rich .fn-list { border-top: 1px solid rgba(120, 100, 40, .45); margin-top: 1.4em; padding-top: .5em; font-size: .88em; }
+.isl-rich sup.fn-ref { color: var(--green); font-weight: 700; }
+.isl-rich ul[style*="list-style-type"] > li::before { display: none; }
+.isl-rich ul[style*="list-style-type"] { padding-left: 1.8em; }

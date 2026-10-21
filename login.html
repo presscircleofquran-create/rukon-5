@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#103C4A">
+<title>লগইন</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/app.css">
+</head>
+<body class="p-body">
+<main class="p-wrap" id="app">
+  <section class="p-card rv"><h3 class="p-t" id="lTitle"></h3>
+  <form class="p-lform" id="form" novalidate>
+    <div class="p-tabs" role="tablist"><button type="button" class="on" id="tLogin" role="tab"></button><button type="button" id="tSign" role="tab"></button></div>
+    <div class="p-field" id="fName" hidden><input id="name" placeholder="" autocomplete="name" maxlength="40"></div>
+    <div class="p-field"><input id="email" type="email" placeholder="" autocomplete="email" required></div>
+    <div class="p-field"><input id="pass" type="password" placeholder="" autocomplete="current-password" required><button type="button" class="eye" id="eye" aria-label="পাসওয়ার্ড দেখান"></button></div>
+    <p class="p-err" id="err" role="alert"></p>
+    <button class="p-submit" id="go" type="submit"></button>
+  </form></section>
+</main>
+<script type="module">
+import { signIn, signUp, isLoggedIn, topHtml, T } from "./assets/app.js";
+document.body.insertAdjacentHTML('afterbegin', topHtml({ title: 'রুকন প্রস্তুতি', noBack: true }));
+const $ = (id) => document.getElementById(id);
+const EYE = '<svg viewBox="0 0 24 24"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12Z"/><circle cx="12" cy="12" r="2.8"/></svg>';
+const EYEOFF = '<svg viewBox="0 0 24 24"><path d="M3 3l18 18"/><path d="M10.6 5.7A9.8 9.8 0 0 1 12 5.5c6 0 9.5 6.5 9.5 6.5a16 16 0 0 1-3.2 3.9M6.4 7.6A16 16 0 0 0 2.5 12S6 18.5 12 18.5a9.6 9.6 0 0 0 4-.9"/><path d="M9.9 10a2.8 2.8 0 0 0 4 4"/></svg>';
+$('eye').innerHTML = EYE;
+const next = (() => { const n = new URLSearchParams(location.search).get('next') || 'index.html'; return /^[\w.\-]+\.html(\?[\w=&%.\-]*)?$/.test(n) ? n : 'index.html'; })();
+if (isLoggedIn()) location.replace(next);
+let mode = 'login';
+$('tLogin').textContent = T('lg_tab_login'); $('tSign').textContent = T('lg_tab_sign');
+$('name').placeholder = T('lg_name_ph'); $('email').placeholder = T('lg_email_ph'); $('pass').placeholder = T('lg_pass_ph');
+const MSG = { 'email-exists': 'এই ইমেইলে আগেই অ্যাকাউন্ট আছে — লগইন করুন', 'no-user': 'এই ইমেইলে কোনো অ্যাকাউন্ট নেই', 'bad-pass': 'পাসওয়ার্ড ভুল',
+  'no-crypto': 'নিরাপদ (https) লিংকে সাইটটি খুলুন', 'unavailable': 'ইন্টারনেট সংযোগ চেক করুন', 'permission-denied': 'Firestore Rules এ অনুমতি নেই — Rules চেক করুন' };
+const say = (t) => { $('err').textContent = t || ''; };
+function setMode(m) {
+  mode = m; const s = m === 'sign';
+  $('tLogin').classList.toggle('on', !s); $('tSign').classList.toggle('on', s);
+  $('fName').hidden = !s; $('go').textContent = s ? T('lg_btn_sign') : T('lg_btn_login');
+  $('lTitle').textContent = s ? T('lg_new') : T('lg_welcome');
+  $('pass').autocomplete = s ? 'new-password' : 'current-password'; say('');
+}
+$('tLogin').onclick = () => setMode('login'); $('tSign').onclick = () => setMode('sign'); setMode('login');
+let shown = false;
+$('eye').onclick = () => { shown = !shown; $('pass').type = shown ? 'text' : 'password'; $('eye').innerHTML = shown ? EYEOFF : EYE; };
+$('form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const email = $('email').value.trim(), pass = $('pass').value, name = $('name').value.trim();
+  if (!/^\S+@\S+\.\S+$/.test(email)) { say('সঠিক ইমেইল দিন'); return; }
+  if (pass.length < 6) { say('পাসওয়ার্ড কমপক্ষে ৬ অক্ষরের দিন'); return; }
+  if (mode === 'sign' && !name) { say('আপনার নাম লিখুন'); return; }
+  $('go').disabled = true; say('');
+  try { if (mode === 'login') await signIn(email, pass); else await signUp({ name, email, pass }); location.replace(next); }
+  catch (er) { console.error(er); say(MSG[er.code] || ('ত্রুটি: ' + (er.code || er.message))); $('go').disabled = false; }
+});
+</script>
+</body>
+</html>

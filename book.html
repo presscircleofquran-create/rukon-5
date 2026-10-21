@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#103C4A">
+<title>বই</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/app.css">
+</head>
+<body class="p-body">
+<main class="p-wrap" id="app"></main>
+<script type="module">
+import { db, getDoc, doc } from "./assets/firebase.js";
+import { requireUser, touchUser, topHtml, setTop, infoCardHtml, boxBtn, loaderHtml, msgHtml, driveDl, qs, esc, toBn, T } from "./assets/app.js";
+
+const app = document.getElementById('app');
+document.body.insertAdjacentHTML('afterbegin', topHtml({ title: '', back: 'index.html' }));
+app.innerHTML = loaderHtml(4);
+const user = await requireUser(); touchUser(user);
+const bid = qs('b');
+const toast = (t) => { document.querySelector('.p-toast')?.remove(); const n = document.createElement('div'); n.className = 'p-toast'; n.textContent = t; document.body.appendChild(n); setTimeout(() => n.remove(), 2600); };
+try {
+  if (!bid) throw new Error('no id');
+  const snap = await getDoc(doc(db, 'sub_buttons', bid));
+  if (!snap.exists() || snap.data().hidden) { app.innerHTML = msgHtml(T('b_missing'), true); throw 0; }
+  const b = snap.data(), enc = encodeURIComponent(bid);
+  document.title = b.name || 'বই'; setTop(b.name || 'বই');
+  if (b.sectionId) document.getElementById('pBack').href = 'books.html?s=' + encodeURIComponent(b.sectionId);
+  const rows = [['b_name', b.name], ['b_author', b.author], ['b_trans', b.translator], ['b_pub', b.publisher], ['b_pages', b.pages ? toBn(b.pages) + ' পৃষ্ঠা' : ''], ['b_price', b.price ? toBn(b.price) + ' টাকা' : '']].map(([k, v]) => [T(k), v || '—']);
+  const v = (t) => 'view.html?b=' + enc + '&t=' + t;
+  app.innerHTML = infoCardHtml(rows) +
+    `<div class="p-stack ico">` +
+      boxBtn({ label: T('b_btn_read'), href: v('read'), i: 0, icon: 'book' }) +
+      boxBtn({ label: T('b_btn_pdf'), href: b.pdfUrl ? driveDl(b.pdfUrl) : '#', i: 1, icon: 'file' }).replace('<a ', b.pdfUrl ? '<a target="_blank" rel="noopener" download ' : '<a data-nopdf="1" ') +
+      boxBtn({ label: T('b_btn_note'), href: v('note'), i: 2, icon: 'notes' }) +
+      boxBtn({ label: T('b_btn_audio'), href: v('audio'), i: 3, icon: 'audio' }) +
+      boxBtn({ label: T('b_btn_video'), href: v('video'), i: 4, icon: 'video' }) + `</div>`;
+  app.addEventListener('click', (e) => { if (e.target.closest('a[data-nopdf]')) { e.preventDefault(); toast(T('b_no_pdf')); } });
+} catch (err) { if (err) { console.error(err); app.innerHTML = msgHtml(T('load_err'), true); } }
+</script>
+</body>
+</html>

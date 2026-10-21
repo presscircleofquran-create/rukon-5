@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#103C4A">
+<title>বই</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/app.css">
+</head>
+<body class="p-body">
+<main class="p-wrap" id="app"></main>
+<script type="module">
+import { db, getDoc, doc } from "./assets/firebase.js";
+import { requireUser, touchUser, trackRead, topHtml, setTop, loaderHtml, msgHtml, driveDl, mediaEmbed, qs, esc, toBn, simpleHtml, autoDir, bd, rollBadge, RI, T } from "./assets/app.js";
+
+const app = document.getElementById('app');
+const bid = qs('b'), t = ['read', 'note', 'audio', 'video'].includes(qs('t')) ? qs('t') : 'read';
+const isDoc = t === 'read' || t === 'note';
+const bar = isDoc ? `<div class="p-bar"><span class="p-pct">${esc(T('v_pct'))} <b class="p-bd" id="pct"><i>${toBn('000')}%</i></b></span><button type="button" class="p-tocbtn" id="tocBtn" hidden>${esc(T('v_toc'))}</button><nav class="p-toc" id="toc" hidden aria-label="সূচিপত্র"></nav></div>` : '';
+document.body.insertAdjacentHTML('afterbegin', topHtml({ title: '', back: 'index.html', bar }));
+app.className = 'p-wrap' + (isDoc ? ' rd' : '');
+app.innerHTML = loaderHtml(3);
+const user = await requireUser(); touchUser(user);
+const $ = (id) => document.getElementById(id);
+const head = (k) => esc(T(k));
+const empty = (k) => `<p style="margin:0;padding:calc(var(--p)*4) calc(var(--p)*3);text-align:center;font-size:calc(var(--p)*2.8);color:var(--c4)">${esc(T('v_empty'))}</p>`;
+
+/* ---------- table of contents (main titles = H1, sub titles = H2). Admin can switch titles off: stored as "off" keys ---------- */
+const tocKey = (h, seen) => { const lv = h.tagName === 'H1' ? 1 : 2, base = lv + '|' + h.textContent.trim(); const n = seen[base] = (seen[base] || 0) + 1; return base + '|' + n; };
+function setupToc(root, off) {
+  const seen = {}, offSet = new Set(Array.isArray(off) ? off : []);
+  const hs = [...root.querySelectorAll('h1,h2')].filter(h => h.textContent.trim()).filter(h => !offSet.has(tocKey(h, seen)));
+  if (!hs.length) return;
+  const groups = []; let g = null;
+  hs.forEach((h, i) => { h.dataset.ti = i; if (h.tagName === 'H1' || !g) { g = { h1: h.tagName === 'H1' ? h : null, items: [] }; groups.push(g); } if (h.tagName === 'H2') g.items.push(h); });
+  const a = (h, cls) => `<div class="${cls}"><i class="dt"></i><a href="#" data-ti="${h.dataset.ti}">${esc(h.textContent.trim())}</a></div>`;
+  $('toc').innerHTML = groups.map(gr => `<div class="g">${gr.h1 ? `<div class="h1"><button type="button" class="tg" aria-label="খুলুন/বন্ধ করুন"${gr.items.length ? '' : ' style="visibility:hidden"'}></button><i class="dt"></i><a href="#" data-ti="${gr.h1.dataset.ti}">${esc(gr.h1.textContent.trim())}</a></div>` : ''}<div class="subs">${gr.items.map(h => a(h, 'h2')).join('')}</div></div>`).join('');
+  $('tocBtn').hidden = false;
+  const stickH = () => $('pStick').getBoundingClientRect().height;
+  const active = () => { let k = -1; hs.forEach((h, i) => { if (h.getBoundingClientRect().top <= stickH() + 8) k = i; }); return k; };
+  const mark = () => {
+    const k = active(); $('toc').querySelectorAll('a.on').forEach(n => n.classList.remove('on'));
+    const el = k >= 0 ? $('toc').querySelector(`a[data-ti="${k}"]`) : null;
+    if (el) { el.classList.add('on'); el.closest('.g').classList.remove('c'); const tb = $('toc'); const r = el.getBoundingClientRect(), pr = tb.getBoundingClientRect(); if (r.top < pr.top || r.bottom > pr.bottom) tb.scrollTop += r.top - pr.top - 20; }
+  };
+  const close = () => { $('toc').hidden = true; }, open = () => { $('toc').hidden = false; mark(); };
+  $('tocBtn').onclick = (e) => { e.stopPropagation(); $('toc').hidden ? open() : close(); };
+  document.addEventListener('click', (e) => { if (!$('toc').hidden && !e.target.closest('#toc')) close(); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') close(); });
+  $('toc').addEventListener('click', (e) => {
+    e.stopPropagation();
+    const tg = e.target.closest('.tg'); if (tg) { tg.closest('.g').classList.toggle('c'); return; }
+    const l = e.target.closest('a[data-ti]'); if (!l) return; e.preventDefault();
+    const h = hs[+l.dataset.ti]; close(); h.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    h.classList.remove('tocflash'); void h.offsetWidth; h.classList.add('tocflash'); setTimeout(() => h.classList.remove('tocflash'), 1500);
+  });
+}
+function trackPct() {
+  const el = $('pct'); let shown = 0, target = 0, running = false;
+  const label = (n) => toBn(String(n).padStart(3, '0')) + '%';
+  el.innerHTML = `<i>${label(0)}</i>`;
+  const step = () => {
+    if (shown === target) { running = false; return; }
+    const dir = target > shown ? 1 : -1, gap = Math.abs(target - shown);
+    shown += dir;
+    const old = el.lastElementChild, nw = document.createElement('i'); nw.textContent = label(shown); el.appendChild(nw);
+    const dur = Math.max(90, Math.min(190, 1500 / gap)), opt = { duration: dur, easing: 'cubic-bezier(.2,.8,.2,1)', fill: 'both' };
+    old.animate([{ transform: 'translateY(0)', opacity: 1 }, { transform: `translateY(${-dir * 110}%)`, opacity: 0 }], opt).onfinish = () => old.remove();
+    nw.animate([{ transform: `translateY(${dir * 110}%)`, opacity: 0 }, { transform: 'translateY(0)', opacity: 1 }], opt); 
+    setTimeout(step, Math.max(28, Math.min(110, 1000 / gap)));
+  };
+  const up = () => {
+    const max = document.documentElement.scrollHeight - innerHeight;
+    target = max <= 4 ? 100 : Math.max(0, Math.min(100, Math.round(scrollY / max * 100)));
+    if (!running && shown !== target) { running = true; step(); }
+  };
+  addEventListener('scroll', up, { passive: true }); addEventListener('resize', up); up(); setTimeout(up, 600);
+}
+
+/* ---------- audio player ---------- */
+const WAVE = [1.25, 1.59, 2.3, 3.56, 6.78, 5.58, 4.57, 3.21, 2.32, 3.4, 4.78, 6.81, 7.76, 5.57, 4.58, 3.55, 2.96, 4.31, 7.85, 6.11, 4.55, 3.6, 2.09, 1.22];
+const fmt = (s) => { s = Math.max(0, Math.floor(s || 0)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
+const isEmbedUrl = (u) => /drive\.google\.com|youtu\.be|youtube\.com/i.test(u);
+function audioCard(url) {
+  const emb = isEmbedUrl(url);
+  app.innerHTML = `<section class="p-card p-aud rv${emb ? ' embed' : ''}"><h3 class="p-t">${head('v_audio')}</h3><div class="body"><div class="mic">${RI.mic}</div>` +
+    (emb ? `<div class="alt">${mediaEmbed(url, 'audio')}</div>` :
+    `<div class="seek" id="seek"><i id="seekF"></i></div><div class="times"><span id="tCur">0:00</span><span id="tDur">0:00</span></div>` +
+    `<div class="wave">${WAVE.map((h, k) => `<i style="--h:${h};--d:${(.45 + ((k * 37) % 7) / 10).toFixed(2)}s;--w:-${(((k * 13) % 9) / 10).toFixed(1)}s"></i>`).join('')}</div>` +
+    `<div class="ctl"><button type="button" class="sk" id="rew" aria-label="১০ সেকেন্ড পিছনে">${RI.rew}</button><button type="button" class="pp" id="pp" aria-label="চালান / থামান"><span class="ps">${RI.pause}</span><span class="pl">${RI.play}</span></button><button type="button" class="sk" id="fwd" aria-label="১০ সেকেন্ড সামনে">${RI.fwd}</button></div>` +
+    `<div class="vol" id="vol"><i id="volF"></i><em id="volT"></em></div>`) + `</div></section>`;
+  if (emb) return;
+  const card = app.querySelector('.p-aud'), au = new Audio(); au.preload = 'metadata'; au.src = /drive\.google/.test(url) ? driveDl(url) : url;
+  const set = (id, r) => { $(id).style.width = (r * 100) + '%'; };
+  const ui = () => { const d = au.duration || 0; set('seekF', d ? au.currentTime / d : 0); $('tCur').textContent = fmt(au.currentTime); $('tDur').textContent = fmt(d); };
+  au.addEventListener('timeupdate', ui); au.addEventListener('loadedmetadata', ui); au.addEventListener('durationchange', ui);
+  au.addEventListener('play', () => card.classList.add('playing')); au.addEventListener('pause', () => card.classList.remove('playing')); au.addEventListener('ended', () => { card.classList.remove('playing'); });
+  $('pp').onclick = () => { au.paused ? au.play().catch(() => {}) : au.pause(); };
+  $('rew').onclick = () => { au.currentTime = Math.max(0, au.currentTime - 10); };
+  $('fwd').onclick = () => { au.currentTime = Math.min(au.duration || 1e9, au.currentTime + 10); };
+  const drag = (el, fn) => { const mv = (e) => { const r = el.getBoundingClientRect(); fn(Math.max(0, Math.min(1, (e.clientX - r.left) / r.width))); };
+    el.addEventListener('pointerdown', (e) => { el.setPointerCapture(e.pointerId); mv(e); const m = (ev) => mv(ev), u = () => { el.removeEventListener('pointermove', m); el.removeEventListener('pointerup', u); el.removeEventListener('pointercancel', u); }; el.addEventListener('pointermove', m); el.addEventListener('pointerup', u); el.addEventListener('pointercancel', u); }); };
+  drag($('seek'), (r) => { if (au.duration) { au.currentTime = r * au.duration; ui(); } });
+  const vset = (r) => { au.volume = r; $('volF').style.width = (r * 100) + '%'; $('volT').style.left = (r * 100) + '%'; }; vset(1);
+  drag($('vol'), vset);
+  au.addEventListener('error', () => { card.classList.add('embed'); card.querySelector('.body').insertAdjacentHTML('beforeend', `<div class="alt">${mediaEmbed(url, 'audio')}</div>`); });
+}
+
+/* ---------- video card with the rotate / full-screen button ---------- */
+function videoCard(url) {
+  app.innerHTML = `<section class="p-card p-vid rv"><h3 class="p-t">${head('v_video')}</h3><div class="body"><div class="frame" id="frame">${mediaEmbed(url, 'video')}</div></div><div class="tab"><button type="button" id="rot" aria-label="ঘুরিয়ে বড় করুন">${RI.rotate}</button></div></section><button type="button" class="p-rotx" id="rotx" aria-label="বন্ধ করুন">✕</button>`;
+  const card = app.querySelector('.p-vid'), fr = $('frame');
+  const off = () => { card.classList.remove('rot'); try { screen.orientation && screen.orientation.unlock && screen.orientation.unlock(); } catch (e) {} };
+  $('rot').onclick = async () => {
+    if (document.fullscreenElement) { document.exitFullscreen(); return; }
+    if (card.classList.contains('rot')) { off(); return; }
+    try { if (!fr.requestFullscreen) throw 0; await fr.requestFullscreen(); try { await screen.orientation.lock('landscape'); } catch (e) { /* not supported: just full screen */ } }
+    catch (e) { card.classList.add('rot'); }
+  };
+  $('rotx').onclick = off;
+  document.addEventListener('fullscreenchange', () => { if (!document.fullscreenElement) off(); });
+}
+
+try {
+  if (!bid) throw new Error('no id');
+  const snap = await getDoc(doc(db, 'sub_buttons', bid));
+  if (!snap.exists() || snap.data().hidden) { app.innerHTML = msgHtml(T('b_missing'), true); throw 0; }
+  const b = snap.data();
+  document.title = b.name || 'বই'; setTop(b.name || 'বই');
+  $('pBack').href = 'book.html?b=' + encodeURIComponent(bid);
+  if (isDoc) {
+    const html = b[t === 'read' ? 'readHtml' : 'noteHtml'] ? simpleHtml(b[t === 'read' ? 'readHtml' : 'noteHtml'], { unwrapBold: true }) : '';
+    let inner;
+    if (html) inner = `<div class="p-paper"><div class="p-rich" id="rich"></div></div>`;
+    else if (t === 'read' && b.pdfUrl) inner = `<div style="padding:calc(var(--p)*1.5)">${mediaEmbed(b.pdfUrl, 'pdf').replace('<iframe', '<iframe style="width:100%;height:78vh;border:0;border-radius:calc(var(--p)*1.2)"')}</div>`;
+    else inner = `<div class="p-paper"><p style="margin:0;text-align:center;font-size:calc(var(--p)*2.6);color:var(--deep)">${esc(T('v_empty'))}</p></div>`;
+    app.innerHTML = `<section class="p-paper-card rv"><h3 class="p-t">${head(t === 'read' ? 'v_read' : 'v_note')}</h3>${inner}</section>`;
+    const rich = $('rich'); if (rich) { rich.innerHTML = html; autoDir(rich); setupToc(rich, b[t === 'read' ? 'readTocOff' : 'noteTocOff']); }
+    trackPct();
+  } else {
+    const url = b[t === 'audio' ? 'audioUrl' : 'videoUrl'];
+    if (!url) app.innerHTML = `<section class="p-card rv"><h3 class="p-t">${head(t === 'audio' ? 'v_audio' : 'v_video')}</h3>${empty()}</section>`;
+    else if (t === 'audio') audioCard(url); else videoCard(url);
+  }
+  let secName = ''; try { if (b.sectionId) { const sc = await getDoc(doc(db, 'section_buttons', b.sectionId)); if (sc.exists()) secName = [sc.data().name, sc.data().sub].filter(Boolean).join(' '); } } catch (e) {}
+  setTimeout(() => trackRead(user, { id: bid, name: b.name, sectionId: b.sectionId, sectionName: secName, homeId: b.homeId, homeName: '' }), 1500);
+} catch (err) { if (err) { console.error(err); app.innerHTML = msgHtml(T('load_err'), true); } }
+</script>
+</body>
+</html>

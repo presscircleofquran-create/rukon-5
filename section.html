@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#103C4A">
+<title>বাটন</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/app.css">
+</head>
+<body class="p-body">
+<main class="p-wrap" id="app"></main>
+<script type="module">
+import { db, collection, getDocs, getDoc, doc, query, where } from "./assets/firebase.js";
+import { requireUser, touchUser, topHtml, setTop, boxBtn, loaderHtml, msgHtml, emptyHtml, qs, T } from "./assets/app.js";
+
+const app = document.getElementById('app');
+document.body.insertAdjacentHTML('afterbegin', topHtml({ title: '', back: 'index.html' }));
+app.innerHTML = loaderHtml(3);
+const user = await requireUser(); touchUser(user);
+const hid = qs('h');
+try {
+  if (!hid) throw new Error('no id');
+  const home = await getDoc(doc(db, 'home_buttons', hid));
+  if (!home.exists() || home.data().hidden) throw new Error('missing');
+  const h = home.data(), name = h.name || '';
+  document.title = name; setTop(name);
+  if (h.kind === 'syl') {
+    const snap = await getDocs(query(collection(db, 'section_buttons'), where('homeId', '==', hid)));
+    const items = snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(x => x.v === 3 && !x.hidden).sort((a, b) => (a.order || 0) - (b.order || 0));
+    app.innerHTML = items.length ? `<div class="p-stack btns">${items.map((b, i) => boxBtn({ label: b.name, sub: b.sub || '', href: 'books.html?s=' + encodeURIComponent(b.id), i })).join('')}</div>` : emptyHtml('', T('sec_empty'));
+  } else {
+    app.innerHTML = `<section class="p-card p-soon rv"><h3 class="p-t">${T('soon_t')}</h3><div style="padding:calc(var(--p)*4) calc(var(--p)*3)"><p>${T('soon_s')}</p></div></section>`;
+  }
+} catch (err) { console.error(err); app.innerHTML = msgHtml(T('load_err'), true); }
+</script>
+</body>
+</html>
